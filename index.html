@@ -1,0 +1,94 @@
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tareas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Add SortableJS from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <nav class="navbar">
+            <div class="nav-brand">Lista de Tareas</div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="pendingTasks">
+                    <i class="fas fa-tasks"></i> Pendientes
+                </button>
+                <button class="nav-tab" data-tab="completedTasks">
+                    <i class="fas fa-check-circle"></i> Completadas
+                </button>
+                <button id="exportTasks" class="nav-tab">
+                    <i class="fas fa-file-export"></i> Exportar
+                </button>
+                <button id="importTasks" class="nav-tab">
+                    <i class="fas fa-file-import"></i> Importar
+                </button>
+            </div>
+        </nav>
+
+        <div class="task-sections">
+            <div id="pendingTasks" class="task-column active">
+                <h2>Tareas Pendientes</h2>
+            </div>
+            <div id="completedTasks" class="task-column">
+                <h2>Tareas Completadas</h2>
+            </div>
+        </div>
+
+        <div class="fab" id="addTaskFab">
+            <i class="fas fa-plus"></i>
+        </div>
+
+        <div id="taskFormModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h3>Crear Nueva Tarea</h3>
+                <form id="newTaskForm">
+                    <input type="text" id="titulo" placeholder="Título" required>
+                    <textarea id="pros" placeholder="Pros"></textarea>
+                    <textarea id="contras" placeholder="Contras"></textarea>
+                    
+                    <div class="date-range">
+                        <label>Fecha Inicial</label>
+                        <input type="date" id="fechaInicial">
+                        <label>Fecha Final</label>
+                        <input type="date" id="fechaFinal">
+                    </div>
+
+                    <select id="momentoDiaSelect">
+                        <option value="Mañana">Mañana</option>
+                        <option value="Dia">Día</option>
+                        <option value="Tarde">Tarde</option>
+                        <option value="Madrugada">Madrugada</option>
+                    </select>
+
+                    <div class="subtask-section">
+                        <h4>Obstáculos</h4>
+                        <div id="obstaculosContainer"></div>
+                        <button type="button" id="addObstaculo">+ Añadir Obstáculo</button>
+                    </div>
+
+                    <div class="subtask-section">
+                        <h4>Soluciones</h4>
+                        <div id="solucionesContainer"></div>
+                        <button type="button" id="addSolucion">+ Añadir Solución</button>
+                    </div>
+
+                    <div class="subtask-section">
+                        <h4>Pasos</h4>
+                        <div id="pasosContainer"></div>
+                        <button type="button" id="addPaso">+ Añadir Paso</button>
+                    </div>
+
+                    <button type="submit">Crear Tarea</button>
+                </form>
+            </div>
+        </div>
+        <input type="file" id="importFileInput" style="display: none;" accept=".json">
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
