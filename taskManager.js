@@ -1,6 +1,6 @@
 export class TaskManager {
   constructor() {
-    this.tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    this.tasks = JSON.parse(localStorage.getItem('taskManagerProTasks')) || [];
     this.ensureEditModalExists();
   }
 
@@ -363,6 +363,6 @@ export class TaskManager {
   }
 
   saveTasks() {
-    localStorage.setItem('tasks', JSON.stringify(this.tasks));
+    localStorage.setItem('taskManagerProTasks', JSON.stringify(this.tasks));
   }
 }

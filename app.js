@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportTasksBtn = document.getElementById('exportTasks');
     if (exportTasksBtn) {
         exportTasksBtn.addEventListener('click', () => {
-            const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            const tasks = JSON.parse(localStorage.getItem('taskManagerProTasks')) || [];
             const blob = new Blob([JSON.stringify(tasks, null, 2)], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Validate imported tasks
                         if (Array.isArray(importedTasks)) {
                             // Merge imported tasks with existing tasks
-                            const existingTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                            const existingTasks = JSON.parse(localStorage.getItem('taskManagerProTasks')) || [];
                             const mergedTasks = [...existingTasks, ...importedTasks];
                             
                             // Remove duplicates based on a unique identifier (e.g., id)
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 index === self.findIndex((t) => t.id === task.id)
                             );
 
-                            localStorage.setItem('tasks', JSON.stringify(uniqueTasks));
+                            localStorage.setItem('taskManagerProTasks', JSON.stringify(uniqueTasks));
                             taskManager.tasks = uniqueTasks;
                             taskManager.renderTasks();
                             alert('Tareas importadas exitosamente.');
