@@ -1,7 +1,28 @@
 import { TaskManager } from './taskManager.js';
 import Sortable from 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/+esm';
 
+const motivationalQuotes = [
+    "Lo más difícil de hacer algo es empezar",
+    "No tener disciplina es una forma de autosabotaje",
+    "Debes pensar siempre en que paso es el siguiente y ser persistente",
+    "Más confianza, menos negativismo",
+    "Los días son diferentes, así que siempre hay oportunidades",
+    "Cada quien piensa en lo que necesita",
+    "La valentía no es la ausencia del miedo; es la persistencia a pesar del miedo"
+];
+
+// Function to display a random motivational quote
+function displayRandomQuote() {
+    const quoteElement = document.getElementById('quote-text');
+    if (quoteElement) {
+        const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+        quoteElement.textContent = motivationalQuotes[randomIndex];
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    displayRandomQuote();
+
     const taskManager = new TaskManager();
 
     // Navigation Tabs and Drag & Drop
