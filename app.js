@@ -20,7 +20,13 @@ function displayRandomQuote() {
     }
 }
 
+// Ensure quote is displayed after full page load
+window.addEventListener('load', () => {
+    displayRandomQuote();
+});
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Ensure quote is displayed (additional safeguard)
     displayRandomQuote();
 
     const taskManager = new TaskManager();
