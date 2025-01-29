@@ -94,13 +94,27 @@ export class TaskManager {
   }
 
   renderTask(task, container) {
-    const allPasosCompleted = task.pasos && 
-      task.pasos.length > 0 && 
-      task.pasos.every(paso => paso.completed);
+    const allSubtasksCompleted = () => {
+      const checkArrayComplete = (arr) => arr && arr.length > 0 ? arr.every(item => item.completed) : true;
+      return checkArrayComplete(task.pasos);
+    };
 
     const taskElement = document.createElement('div');
     taskElement.classList.add('task-item');
     if (task.completed) taskElement.classList.add('completed');
+
+    // Generate HTML for subtasks with their completed state
+    const renderSubtaskList = (subtasks) => {
+      if (!subtasks || subtasks.length === 0) return '';
+      return subtasks.map((subtask, index) => `
+        <div class="subtask">
+          <input type="checkbox" 
+                 id="subtask-${task.id}-${index}" 
+                 ${subtask.completed ? 'checked' : ''}>
+          <label for="subtask-${task.id}-${index}">${subtask.text}</label>
+        </div>
+      `).join('');
+    };
   
     taskElement.innerHTML = `
       <div class="task-header">
@@ -115,88 +129,124 @@ export class TaskManager {
       ${task.completed ? `
         <div class="rewards-section">
           <h4>Recompensas</h4>
-          ${this.renderSubtasks('Recompensas', task.rewards)}
+          ${renderSubtaskList(task.rewards)}
         </div>
       ` : `
         <div class="task-details">
-          <details>
+          <details class="task-details-section">
             <summary>Detalles</summary>
             <p class="pros-text"><strong>Pros:</strong> ${task.pros}</p>
             <p class="contras-text"><strong>Contras:</strong> ${task.contras}</p>
           </details>
 
-          ${this.renderSubtasks('Obstáculos', task.obstaculos)}
-          ${this.renderSubtasks('Soluciones', task.soluciones)}
-          ${this.renderSubtasks('Pasos', task.pasos)}
-          ${this.renderSubtasks('Recompensas', task.rewards)}
+          <details class="task-details-section obstaculos-section">
+            <summary>Obstáculos</summary>
+            ${renderSubtaskList(task.obstaculos)}
+          </details>
+
+          <details class="task-details-section soluciones-section">
+            <summary>Soluciones</summary>
+            ${renderSubtaskList(task.soluciones)}
+          </details>
+
+          <details class="task-details-section pasos-section">
+            <summary>Pasos</summary>
+            ${renderSubtaskList(task.pasos)}
+          </details>
+
+          <details class="task-details-section recompensas-section">
+            <summary>Recompensas</summary>
+            ${renderSubtaskList(task.rewards)}
+          </details>
         </div>
       `}
 
       <div class="task-actions">
-        <button class="toggle-complete ${allPasosCompleted ? '' : 'disabled'}" 
-                data-id="${task.id}" 
-                ${allPasosCompleted ? '' : 'disabled'}>
-          ${task.completed ? 'Restaurar' : 'Completar'}
-        </button>
+        ${task.completed ? `
+          <button class="toggle-complete" data-id="${task.id}">
+            Restaurar
+          </button>
+        ` : `
+          <button class="toggle-complete" data-id="${task.id}">
+            Completar
+          </button>
+        `}
         <button class="delete-task" data-id="${task.id}">
           <i class="fas fa-trash"></i> Eliminar
         </button>
       </div>
     `;
 
-    // Modify toggle complete button behavior
-    const toggleCompleteBtn = taskElement.querySelector('.toggle-complete');
-    if (!allPasosCompleted) {
-      toggleCompleteBtn.title = 'Completa primero todos los pasos';
-    }
-    toggleCompleteBtn.addEventListener('click', () => {
-      if (allPasosCompleted) {
-        this.toggleTaskCompletion(task.id);
-      }
-    });
-
     const deleteTaskBtn = taskElement.querySelector('.delete-task');
     deleteTaskBtn.addEventListener('click', () => {
       this.deleteTask(task.id);
     });
 
-    // Add edit task event
     const editTaskBtn = taskElement.querySelector('.edit-task');
     editTaskBtn.addEventListener('click', () => {
       this.editTask(task);
     });
 
+    const toggleCompleteBtn = taskElement.querySelector('.toggle-complete');
+    if (toggleCompleteBtn) {
+      toggleCompleteBtn.addEventListener('click', () => {
+        this.toggleTaskCompletion(task.id);
+      });
+    }
+
     // Añadir eventos para subtareas
     this.addSubtaskEvents(taskElement, task);
 
+    // After rendering, restore the open state of details elements
+    const detailsElements = taskElement.querySelectorAll('details');
+    detailsElements.forEach(details => {
+      const sectionName = details.className.split(' ')[1];
+      const isOpen = localStorage.getItem(`${task.id}-${sectionName}-open`);
+      if (isOpen === 'true') {
+        details.setAttribute('open', '');
+      }
+
+      // Save open/closed state when toggled
+      details.addEventListener('toggle', () => {
+        localStorage.setItem(`${task.id}-${sectionName}-open`, details.open);
+      });
+    });
+
     container.appendChild(taskElement);
-  }
-
-  renderSubtasks(title, subtasks) {
-    if (!subtasks || subtasks.length === 0) return '';
-
-    const subtaskHTML = subtasks.map((subtask, index) => `
-      <div class="subtask">
-        <input type="checkbox" id="subtask-${title}-${index}" 
-               ${subtask.completed ? 'checked' : ''}>
-        <label for="subtask-${title}-${index}">${subtask.text}</label>
-      </div>
-    `).join('');
-
-    return `
-      <details>
-        <summary>${title}</summary>
-        ${subtaskHTML}
-      </details>
-    `;
   }
 
   addSubtaskEvents(taskElement, task) {
     const subtaskCheckboxes = taskElement.querySelectorAll('input[type="checkbox"]');
     subtaskCheckboxes.forEach((checkbox, index) => {
-      checkbox.addEventListener('change', () => {
-        // Implementar lógica para marcar subtareas
-        // Si todos los pasos están completados, marcar tarea como completada
+      checkbox.addEventListener('change', (e) => {
+        // Find the task in the tasks array
+        const taskIndex = this.tasks.findIndex(t => t.id === task.id);
+        if (taskIndex === -1) return;
+
+        // Find the closest details or section container
+        let container = checkbox.closest('.subtask').parentElement;
+        if (!container) return;
+
+        // Determine subtask type based on container class or content
+        let subtaskType;
+        if (container.matches('.obstaculos-section, #editObstaculosContainer') || container.closest('details')?.querySelector('summary')?.textContent.includes('Obstáculos')) {
+          subtaskType = 'obstaculos';
+        } else if (container.matches('.soluciones-section, #editSolucionesContainer') || container.closest('details')?.querySelector('summary')?.textContent.includes('Soluciones')) {
+          subtaskType = 'soluciones';
+        } else if (container.matches('.pasos-section, #editPasosContainer') || container.closest('details')?.querySelector('summary')?.textContent.includes('Pasos')) {
+          subtaskType = 'pasos';
+        } else if (container.matches('.recompensas-section, #editRecompensasContainer') || container.closest('details')?.querySelector('summary')?.textContent.includes('Recompensas')) {
+          subtaskType = 'rewards';
+        }
+
+        // Get all checkboxes in the current section to find the correct index
+        const sectionCheckboxes = Array.from(container.querySelectorAll('input[type="checkbox"]'));
+        const currentIndex = sectionCheckboxes.indexOf(checkbox);
+
+        if (subtaskType && this.tasks[taskIndex][subtaskType] && this.tasks[taskIndex][subtaskType][currentIndex]) {
+          this.tasks[taskIndex][subtaskType][currentIndex].completed = e.target.checked;
+          this.saveTasks();
+        }
       });
     });
   }
@@ -276,7 +326,7 @@ export class TaskManager {
     this.populateSubtaskFields('editObstaculosContainer', task.obstaculos || []);
     this.populateSubtaskFields('editSolucionesContainer', task.soluciones || []);
     this.populateSubtaskFields('editPasosContainer', task.pasos || []);
-!    this.populateSubtaskFields('editRecompensasContainer', task.rewards || []);
+    this.populateSubtaskFields('editRecompensasContainer', task.rewards || []);
 
     // Store current task ID for update
     editModal.dataset.taskId = task.id;
@@ -305,8 +355,8 @@ export class TaskManager {
 
             <select id="editMomentoDiaSelect">
               <option value="Mañana">Mañana</option>
-              <option value="Dia">Día</option>
               <option value="Tarde">Tarde</option>
+              <option value="Dia">Día</option>
               <option value="Madrugada">Madrugada</option>
             </select>
 
