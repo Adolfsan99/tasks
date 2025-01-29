@@ -26,10 +26,13 @@ window.addEventListener('load', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Ensure quote is displayed (additional safeguard)
-    displayRandomQuote();
-
     const taskManager = new TaskManager();
+
+    // Add theme toggle button event listener
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle?.addEventListener('change', () => {
+        taskManager.toggleTheme();
+    });
 
     // Navigation Tabs and Drag & Drop
     const navTabs = document.querySelectorAll('.nav-tab');
@@ -102,9 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const obstaculosContainer = document.getElementById('obstaculosContainer');
     const solucionesContainer = document.getElementById('solucionesContainer');
     const pasosContainer = document.getElementById('pasosContainer');
+    const recompensasContainer = document.getElementById('recompensasContainer');
 
     // Defensive checks for critical elements
-    if (!newTaskForm || !obstaculosContainer || !solucionesContainer || !pasosContainer) {
+    if (!newTaskForm || !obstaculosContainer || !solucionesContainer || !pasosContainer || !recompensasContainer) {
         console.error('Critical form elements are missing');
         return;
     }
@@ -113,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addObstaculoBtn = document.getElementById('addObstaculo');
     const addSolucionBtn = document.getElementById('addSolucion');
     const addPasoBtn = document.getElementById('addPaso');
+    const addRecompensaBtn = document.getElementById('addRecompensa');
 
     if (addObstaculoBtn) {
         addObstaculoBtn.addEventListener('click', () => {
@@ -129,6 +134,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (addPasoBtn) {
         addPasoBtn.addEventListener('click', () => {
             taskManager.addSubtaskField(pasosContainer, 'paso');
+        });
+    }
+
+    if (addRecompensaBtn) {
+        addRecompensaBtn.addEventListener('click', () => {
+            taskManager.addSubtaskField(recompensasContainer, 'recompensa');
         });
     }
 
@@ -158,7 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
             momentoDia: momentoDiaSelect.value,
             obstaculos: taskManager.getSubtasks(obstaculosContainer),
             soluciones: taskManager.getSubtasks(solucionesContainer),
-            pasos: taskManager.getSubtasks(pasosContainer)
+            pasos: taskManager.getSubtasks(pasosContainer),
+            rewards: taskManager.getSubtasks(recompensasContainer)
         });
 
         // Limpiar formulario
@@ -166,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         obstaculosContainer.innerHTML = '';
         solucionesContainer.innerHTML = '';
         pasosContainer.innerHTML = '';
+        recompensasContainer.innerHTML = '';
 
         // Ocultar modal
         if (taskFormModal) {
@@ -186,59 +199,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Export Tasks
     const exportTasksBtn = document.getElementById('exportTasks');
     if (exportTasksBtn) {
-        exportTasksBtn.addEventListener('click', () => {
-            const tasks = JSON.parse(localStorage.getItem('taskManagerProTasks')) || [];
-            const blob = new Blob([JSON.stringify(tasks, null, 2)], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `tasks_export_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
+        exportTasksBtn.addEventListener('click', (event) => {
+            taskManager.exportTasks(event);
         });
     }
 
     // Import Tasks
-    const importFileInput = document.getElementById('importFileInput');
     const importTasksBtn = document.getElementById('importTasks');
+    const importFileInput = document.getElementById('importFileInput');
     
     if (importTasksBtn && importFileInput) {
-        importTasksBtn.addEventListener('click', () => {
-            importFileInput.click();
+        importTasksBtn.addEventListener('click', (event) => {
+            taskManager.importTasks(event);
         });
 
         importFileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const importedTasks = JSON.parse(e.target.result);
-                        // Validate imported tasks
-                        if (Array.isArray(importedTasks)) {
-                            // Merge imported tasks with existing tasks
-                            const existingTasks = JSON.parse(localStorage.getItem('taskManagerProTasks')) || [];
-                            const mergedTasks = [...existingTasks, ...importedTasks];
-                            
-                            // Remove duplicates based on a unique identifier (e.g., id)
-                            const uniqueTasks = mergedTasks.filter((task, index, self) =>
-                                index === self.findIndex((t) => t.id === task.id)
-                            );
-
-                            localStorage.setItem('taskManagerProTasks', JSON.stringify(uniqueTasks));
-                            taskManager.tasks = uniqueTasks;
-                            taskManager.renderTasks();
-                            alert('Tareas importadas exitosamente.');
-                        } else {
-                            throw new Error('Formato de archivo inválido');
-                        }
-                    } catch (error) {
-                        console.error('Error importing tasks:', error);
-                        alert('Error al importar tareas. Asegúrese de seleccionar un archivo JSON válido.');
-                    }
-                };
-                reader.readAsText(file);
-            }
+            taskManager.handleImportFile(event);
         });
     }
 
@@ -260,6 +236,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // Ensure quote is displayed (additional safeguard)
+    displayRandomQuote();
 
     // Renderizar tareas inicial
     taskManager.renderTasks();

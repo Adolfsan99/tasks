@@ -1,7 +1,8 @@
 export class TaskManager {
   constructor() {
-    this.tasks = JSON.parse(localStorage.getItem('taskManagerProTasks')) || [];
+    this.tasks = JSON.parse(localStorage.getItem('taskManagerProTasks_v2')) || [];
     this.ensureEditModalExists();
+    this.initializeTheme();
   }
 
   // New method to ensure edit modal exists
@@ -11,11 +12,24 @@ export class TaskManager {
     }
   }
 
+  initializeTheme() {
+    const savedTheme = localStorage.getItem('taskManagerTheme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }
+
+  toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('taskManagerTheme', newTheme);
+  }
+
   createTask(taskData) {
     const task = {
       id: Date.now(),
       ...taskData,
-      completed: false
+      completed: false,
+      rewards: taskData.rewards || []
     };
     this.tasks.push(task);
     this.saveTasks();
@@ -80,8 +94,14 @@ export class TaskManager {
   }
 
   renderTask(task, container) {
+    const allPasosCompleted = task.pasos && 
+      task.pasos.length > 0 && 
+      task.pasos.every(paso => paso.completed);
+
     const taskElement = document.createElement('div');
     taskElement.classList.add('task-item');
+    if (task.completed) taskElement.classList.add('completed');
+  
     taskElement.innerHTML = `
       <div class="task-header">
         <h3>${task.titulo}</h3>
@@ -92,18 +112,30 @@ export class TaskManager {
       <p><strong>Momento:</strong> ${task.momentoDia}</p>
       <p><strong>Plazo:</strong> ${task.fechaInicial} - ${task.fechaFinal}</p>
       
-      <details>
-        <summary>Detalles</summary>
-        <p><strong>Pros:</strong> ${task.pros}</p>
-        <p><strong>Contras:</strong> ${task.contras}</p>
-      </details>
+      ${task.completed ? `
+        <div class="rewards-section">
+          <h4>Recompensas</h4>
+          ${this.renderSubtasks('Recompensas', task.rewards)}
+        </div>
+      ` : `
+        <div class="task-details">
+          <details>
+            <summary>Detalles</summary>
+            <p class="pros-text"><strong>Pros:</strong> ${task.pros}</p>
+            <p class="contras-text"><strong>Contras:</strong> ${task.contras}</p>
+          </details>
 
-      ${this.renderSubtasks('Obstáculos', task.obstaculos)}
-      ${this.renderSubtasks('Soluciones', task.soluciones)}
-      ${this.renderSubtasks('Pasos', task.pasos)}
+          ${this.renderSubtasks('Obstáculos', task.obstaculos)}
+          ${this.renderSubtasks('Soluciones', task.soluciones)}
+          ${this.renderSubtasks('Pasos', task.pasos)}
+          ${this.renderSubtasks('Recompensas', task.rewards)}
+        </div>
+      `}
 
       <div class="task-actions">
-        <button class="toggle-complete" data-id="${task.id}">
+        <button class="toggle-complete ${allPasosCompleted ? '' : 'disabled'}" 
+                data-id="${task.id}" 
+                ${allPasosCompleted ? '' : 'disabled'}>
           ${task.completed ? 'Restaurar' : 'Completar'}
         </button>
         <button class="delete-task" data-id="${task.id}">
@@ -112,10 +144,15 @@ export class TaskManager {
       </div>
     `;
 
-    // Añadir eventos a los botones
+    // Modify toggle complete button behavior
     const toggleCompleteBtn = taskElement.querySelector('.toggle-complete');
+    if (!allPasosCompleted) {
+      toggleCompleteBtn.title = 'Completa primero todos los pasos';
+    }
     toggleCompleteBtn.addEventListener('click', () => {
-      this.toggleTaskCompletion(task.id);
+      if (allPasosCompleted) {
+        this.toggleTaskCompletion(task.id);
+      }
     });
 
     const deleteTaskBtn = taskElement.querySelector('.delete-task');
@@ -208,6 +245,7 @@ export class TaskManager {
     const editObstaculosContainer = document.getElementById('editObstaculosContainer');
     const editSolucionesContainer = document.getElementById('editSolucionesContainer');
     const editPasosContainer = document.getElementById('editPasosContainer');
+    const editRecompensasContainer = document.getElementById('editRecompensasContainer');
 
     // Comprehensive null checks
     const editElements = [
@@ -216,7 +254,8 @@ export class TaskManager {
       editMomentoDiaSelect, 
       editObstaculosContainer, 
       editSolucionesContainer, 
-      editPasosContainer
+      editPasosContainer,
+      editRecompensasContainer
     ];
 
     if (editElements.some(el => el === null)) {
@@ -237,6 +276,7 @@ export class TaskManager {
     this.populateSubtaskFields('editObstaculosContainer', task.obstaculos || []);
     this.populateSubtaskFields('editSolucionesContainer', task.soluciones || []);
     this.populateSubtaskFields('editPasosContainer', task.pasos || []);
+!    this.populateSubtaskFields('editRecompensasContainer', task.rewards || []);
 
     // Store current task ID for update
     editModal.dataset.taskId = task.id;
@@ -288,6 +328,12 @@ export class TaskManager {
               <button type="button" id="editAddPaso">+ Añadir Paso</button>
             </div>
 
+            <div class="subtask-section">
+              <h4>Recompensas</h4>
+              <div id="editRecompensasContainer"></div>
+              <button type="button" id="editAddRecompensa">+ Añadir Recompensa</button>
+            </div>
+
             <button type="submit">Guardar Cambios</button>
           </form>
         </div>
@@ -319,6 +365,10 @@ export class TaskManager {
       this.addSubtaskField(document.getElementById('editPasosContainer'), 'paso');
     });
 
+    document.getElementById('editAddRecompensa').addEventListener('click', () => {
+      this.addSubtaskField(document.getElementById('editRecompensasContainer'), 'recompensa');
+    });
+
     editTaskForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const taskId = parseInt(editModal.dataset.taskId);
@@ -332,7 +382,8 @@ export class TaskManager {
         momentoDia: document.getElementById('editMomentoDiaSelect').value,
         obstaculos: this.getSubtasks(document.getElementById('editObstaculosContainer')),
         soluciones: this.getSubtasks(document.getElementById('editSolucionesContainer')),
-        pasos: this.getSubtasks(document.getElementById('editPasosContainer'))
+        pasos: this.getSubtasks(document.getElementById('editPasosContainer')),
+        rewards: this.getSubtasks(document.getElementById('editRecompensasContainer'))
       };
 
       this.updateTask(taskId, updatedTask);
@@ -362,7 +413,56 @@ export class TaskManager {
     }
   }
 
+  exportTasks(event) {
+    event.preventDefault(); // Prevent default link behavior
+    const tasks = JSON.parse(localStorage.getItem('taskManagerProTasks_v2')) || [];
+    const blob = new Blob([JSON.stringify(tasks, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tasks_export_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  importTasks(event) {
+    event.preventDefault(); // Prevent default link behavior
+    const fileInput = document.getElementById('importFileInput');
+    fileInput.click();
+  }
+
+  handleImportFile(event) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedTasks = JSON.parse(e.target.result);
+          if (Array.isArray(importedTasks)) {
+            const existingTasks = JSON.parse(localStorage.getItem('taskManagerProTasks_v2')) || [];
+            const mergedTasks = [...existingTasks, ...importedTasks];
+            
+            const uniqueTasks = mergedTasks.filter((task, index, self) =>
+              index === self.findIndex((t) => t.id === task.id)
+            );
+
+            localStorage.setItem('taskManagerProTasks_v2', JSON.stringify(uniqueTasks));
+            this.tasks = uniqueTasks;
+            this.renderTasks();
+            alert('Tareas importadas exitosamente.');
+          } else {
+            throw new Error('Formato de archivo inválido');
+          }
+        } catch (error) {
+          console.error('Error importing tasks:', error);
+          alert('Error al importar tareas. Asegúrese de seleccionar un archivo JSON válido.');
+        }
+      };
+      reader.readAsText(file);
+    }
+  }
+
   saveTasks() {
-    localStorage.setItem('taskManagerProTasks', JSON.stringify(this.tasks));
+    localStorage.setItem('taskManagerProTasks_v2', JSON.stringify(this.tasks));
   }
 }

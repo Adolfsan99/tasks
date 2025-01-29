@@ -6,6 +6,22 @@
     --text-color: #2c3e50;
 }
 
+:root[data-theme="light"] {
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  --background-color: #f4f6f7;
+  --card-background: #ffffff;
+  --text-color: #2c3e50;
+}
+
+:root[data-theme="dark"] {
+  --primary-color: #2980b9;
+  --secondary-color: #27ae60;
+  --background-color: #2c3e50;
+  --card-background: #34495e;
+  --text-color: #ecf0f1;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -115,6 +131,14 @@ body {
     transform: none;
 }
 
+.task-item.completed .task-details {
+  display: none;
+}
+
+.task-item.completed .rewards-section {
+  display: block;
+}
+
 .task-actions {
     display: flex;
     justify-content: space-between;
@@ -133,7 +157,7 @@ body {
 }
 
 .task-actions button:hover {
-    color: #2980b9;
+    color: white !important;
 }
 
 .task-actions .delete-task {
@@ -150,6 +174,11 @@ body {
 
 .task-actions .toggle-complete:hover {
     color: #27ae60;
+}
+
+.task-actions .toggle-complete.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .subtask {
@@ -255,6 +284,26 @@ form button[type="submit"] {
     transform: scale(1.1);
 }
 
+.theme-switch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+}
+
+.theme-switch label {
+  cursor: pointer;
+  padding: 5px;
+  color: white;
+}
+
+.theme-switch i {
+  font-size: 1.2em;
+}
+
 .modal {
     display: none;
     position: fixed;
@@ -290,7 +339,7 @@ form button[type="submit"] {
 
 .motivational-quote {
     background-color: rgba(46, 204, 113, 0.1);
-    color: #2c3e50;
+    color: var(--text-color);
     text-align: center;
     padding: 20px;
     margin: 10px 0;
@@ -304,4 +353,12 @@ form button[type="submit"] {
 
 .motivational-quote:hover {
     background-color: rgba(46, 204, 113, 0.15);
+}
+
+.pros-text {
+    color: #2ecc71;
+}
+
+.contras-text {
+    color: #e74c3c;
 }
