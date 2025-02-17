@@ -1,0 +1,54 @@
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planificador</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header-controls">
+      <div class="data-controls">
+        <button id="exportData" class="data-btn"><i class="fas fa-download"></i> Exportar Datos</button>
+        <button id="importData" class="data-btn"><i class="fas fa-upload"></i> Importar Datos</button>
+        <input type="file" id="fileInput" accept=".json" style="display: none;">
+      </div>
+      <button id="themeToggle" class="theme-btn"><i class="fas fa-moon"></i></button>
+    </div>
+
+    <section class="section motivation">
+      <div id="motivationalQuote" class="quote"></div>
+    </section>
+
+    <section class="section objective">
+      <h3>Objetivo del día</h3>
+      <div class="content" contenteditable="true"></div>
+    </section>
+
+    <section class="section reminders">
+      <h3>Recordatorios</h3>
+      <div class="content" contenteditable="true"></div>
+    </section>
+
+    <div class="split-section">
+      <section class="section tasks">
+        <h3>Tareas del día</h3>
+        <div class="content" contenteditable="true"></div>
+      </section>
+
+      <section class="section routine">
+        <h3>Rutina</h3>
+        <div class="content" contenteditable="true"></div>
+      </section>
+    </div>
+
+    <section class="section non-important">
+      <h3>Actividades no importantes</h3>
+      <div class="content" contenteditable="true"></div>
+    </section>
+  </div>
+
+  <script src="main.js" type="module"></script>
+</body>
+</html>
