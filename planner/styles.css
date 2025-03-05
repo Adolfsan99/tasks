@@ -54,11 +54,116 @@ body {
   border-radius: 5px;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 .section h3 {
   color: var(--text-color);
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--border-color);
+  margin: 0;
+}
+
+.add-btn {
+  background-color: var(--button-bg);
+  color: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s;
+}
+
+.add-btn:hover {
+  background-color: var(--button-hover);
+}
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  background-color: var(--section-bg);
+  border-radius: 5px;
+}
+
+.item.completed {
+  opacity: 0.7;
+}
+
+.item.completed .item-text {
+  text-decoration: line-through;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.item-content {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.item-text {
+  flex-grow: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.item-text:hover {
+  text-decoration: underline;
+}
+
+.item-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.progress-bar {
+  width: 100px;
+  height: 8px;
+  background-color: var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--button-bg);
+  transition: width 0.3s ease;
+}
+
+.objective-select {
+  padding: 0.3rem;
+  border-radius: 3px;
+  border: 1px solid var(--border-color);
+  background-color: var(--container-bg);
+  color: var(--text-color);
+}
+
+.delete-btn {
+  color: #dc3545;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem;
 }
 
 .split-section {
