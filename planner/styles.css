@@ -174,11 +174,13 @@ body {
 }
 
 .content {
-  min-height: 50px;
+  width: 100%;
+  min-height: 100px;
   padding: 0.5rem;
   border-radius: 3px;
   background-color: var(--section-bg);
   color: var(--text-color);
+  resize: vertical;
 }
 
 .content:focus {
