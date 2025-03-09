@@ -23,6 +23,8 @@ class Planner {
     this.loadData();
     this.updateMotivationalQuote();
     this.setupTheme();
+    // Add drag and drop functionality
+    this.setupDragAndDrop();
   }
 
   initializeElements() {
@@ -39,6 +41,18 @@ class Planner {
     this.importButton = document.getElementById('importData');
     this.themeButton = document.getElementById('themeToggle');
     this.fileInput = document.getElementById('fileInput');
+    
+    // Add auto-resize functionality to activities textarea
+    this.activitiesText.addEventListener('input', () => {
+      this.activitiesText.style.height = 'auto';
+      this.activitiesText.style.height = this.activitiesText.scrollHeight + 'px';
+    });
+    
+    // Initial height adjustment
+    setTimeout(() => {
+      this.activitiesText.style.height = 'auto';
+      this.activitiesText.style.height = this.activitiesText.scrollHeight + 'px';
+    }, 0);
   }
 
   setupEventListeners() {
@@ -151,14 +165,20 @@ class Planner {
 
     this.tasksContainer.innerHTML = this.tasks.map(task => {
       const objectiveText = task.objectiveName ? `(${task.objectiveName})` : '';
+      const highlightClass = task.highlighted ? 'highlighted' : '';
       
       return `
-        <div class="item ${task.completed ? 'completed' : ''}" data-id="${task.id}">
+        <div class="item ${task.completed ? 'completed' : ''} ${highlightClass}" 
+             data-id="${task.id}" 
+             draggable="true">
           <div class="item-content">
             <input type="checkbox" 
               ${task.completed ? 'checked' : ''} 
               class="checkbox"
             >
+            <button class="highlight-btn">
+              <i class="fas fa-star"></i>
+            </button>
             <span class="item-text">${task.text} ${objectiveText}</span>
           </div>
           <button class="delete-btn">
@@ -169,13 +189,20 @@ class Planner {
     }).join('');
 
     this.rulesContainer.innerHTML = this.rules.map(rule => {
+      const highlightClass = rule.highlighted ? 'highlighted' : '';
+      
       return `
-        <div class="item ${rule.completed ? 'completed' : ''}" data-id="${rule.id}">
+        <div class="item ${rule.completed ? 'completed' : ''} ${highlightClass}" 
+             data-id="${rule.id}"
+             draggable="true">
           <div class="item-content">
             <input type="checkbox" 
               ${rule.completed ? 'checked' : ''} 
               class="checkbox"
             >
+            <button class="highlight-btn">
+              <i class="fas fa-star"></i>
+            </button>
             <span class="item-text">${rule.text}</span>
           </div>
           <button class="delete-btn">
@@ -219,6 +246,63 @@ class Planner {
       item.querySelector('.item-text').addEventListener('click', () => this.editItem('rules', id));
       item.querySelector('.delete-btn').addEventListener('click', () => this.deleteItem('rules', id));
     });
+
+    // Add drag event listeners
+    const draggables = document.querySelectorAll('.item[draggable="true"]');
+    draggables.forEach(draggable => {
+      draggable.addEventListener('dragstart', () => {
+        draggable.classList.add('dragging');
+      });
+      
+      draggable.addEventListener('dragend', () => {
+        draggable.classList.remove('dragging');
+        this.saveData();
+      });
+    });
+
+    // Add highlight button listeners
+    this.tasksContainer.querySelectorAll('.highlight-btn').forEach(btn => {
+      const item = btn.closest('.item');
+      const id = parseInt(item.dataset.id);
+      btn.addEventListener('click', () => this.toggleHighlight('tasks', id));
+    });
+
+    this.rulesContainer.querySelectorAll('.highlight-btn').forEach(btn => {
+      const item = btn.closest('.item');
+      const id = parseInt(item.dataset.id);
+      btn.addEventListener('click', () => this.toggleHighlight('rules', id));
+    });
+  }
+
+  setupDragAndDrop() {
+    const dragLists = [this.tasksContainer, this.rulesContainer];
+    
+    dragLists.forEach(container => {
+      container.addEventListener('dragover', e => {
+        e.preventDefault();
+        const draggable = document.querySelector('.dragging');
+        const afterElement = this.getDragAfterElement(container, e.clientY);
+        if (afterElement == null) {
+          container.appendChild(draggable);
+        } else {
+          container.insertBefore(draggable, afterElement);
+        }
+      });
+    });
+  }
+
+  getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.item:not(.dragging)')];
+
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
   }
 
   editItem(type, id) {
@@ -229,7 +313,17 @@ class Planner {
     const newText = prompt(`Edit ${type.slice(0, -1)}:`, item.text);
     if (!newText) return;
 
+    const oldText = item.text;
     item.text = newText;
+
+    if (type === 'objectives') {
+      // Update all tasks with this objective
+      this.tasks.forEach(task => {
+        if (task.objectiveName === oldText) {
+          task.objectiveName = newText;
+        }
+      });
+    }
 
     if (type === 'tasks') {
       const objectives = this.objectives.map(o => o.text);
@@ -246,6 +340,16 @@ class Planner {
 
     this.renderItems();
     this.saveData();
+  }
+
+  toggleHighlight(type, id) {
+    const items = this[type];
+    const item = items.find(i => i.id === id);
+    if (item) {
+      item.highlighted = !item.highlighted;
+      this.renderItems();
+      this.saveData();
+    }
   }
 
   saveData() {
